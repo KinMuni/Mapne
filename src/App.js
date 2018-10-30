@@ -1,0 +1,113 @@
+import React, {
+  Component
+} from "react";
+import MapSites from './MapSites'
+import axios from "axios";
+import "./App.css";
+
+class App extends Component {
+  state = {
+    venues: []
+  };
+  componentDidMount() {
+    this.getVenues();
+  }
+  loadMap = () => {
+    loadScript(
+      "https://maps.googleapis.com/maps/api/js?key=AIzaSyDK4Rzpk7QIeoxO5xb1CxNMceih2sop_NY&callback=initMap"
+    );
+    window.initMap = this.initMap;
+  };
+
+  getVenues = () => {
+    const endPoint = "https://api.foursquare.com/v2/venues/explore?"
+    const parameters = {
+      client_id: "QANEM2RQ0MROGYQKMXITFC2AP5C21MY1I4JUWGXVJHIL4ZTK",
+      client_secret: "WNDZEXOEG3QTHCJSS1SJPZP2BVYAQRHKW10DTYJBQEFHOW4H",
+
+      near: "Sydney",
+      v: "20181020"
+    }
+
+    axios
+      .get(endPoint + new URLSearchParams(parameters))
+      .then(response => {
+        this.setState({
+          venues: response.data.response.groups[0].items
+        },  this.loadMap())
+      })
+
+      .catch(error => {
+        console.log("ERROR!! " + error.response);
+      })
+  }
+
+  initMap = () => {
+
+    var map = new window.google.maps.Map(document.getElementById("map"), {
+      center: {
+        lat:-34.397,
+        lng:150.644
+              },
+      zoom: 7
+        })
+        //create an infow window
+        var infowindow = new window.google.maps.InfoWindow()
+        // Display Dynamic markers
+
+     this.state.venues.map(myVenue => {
+      var contentString = `${myVenue.venue.name}`
+  // creeate a marker
+      var marker= new window.google.maps.Marker({
+      position: {
+        lat: myVenue.venue.location.lat,
+        lng: myVenue.venue.location.lng
+      },
+      map: map,
+      title: myVenue.venue.name
+
+    })
+     // click on a Marker
+    marker.addListener('click', function() {
+       // change the content
+
+  infowindow.setContent(contentString)
+
+         //open an infowindow
+    infowindow.open(map, marker)
+
+  });
+
+   })
+}
+  render() {
+    console.log("venues: ", this.props.venues);
+
+    return (
+      <div id='side-bar'>
+        <input
+          id='input-box'
+          type='text'
+          placeholder='Enter the site'
+          arial-label='text filter'
+          value={this.state.value}
+          onChange=
+          {event => this.handleValueChange}/>
+        {this.props.venues && this.props.venues.map(venue => {
+          return (
+            <button key={venue.venue.id}>{venue.venue.name}</button>
+          )
+        })}
+      </div>
+    );
+  }
+}
+  function loadScript(url) {
+  var index = window.document.getElementsByTagName("script")[0]
+  var script = window.document.createElement("script")
+  script.src = url
+  script.async = true
+  script.defer = true
+  index.parentNode.insertBefore(script, index)
+}
+export default App
